@@ -1,0 +1,120 @@
+pipeline {
+    agent any
+    environment {
+        MS_Teams_URL = credentials('')
+    }
+    stages {
+
+// SHS
+
+        stage('TF-INIT-SHS') {
+            steps {
+                dir ('shs') {
+                    sh 'terraform init'
+                }
+
+            }
+        }
+
+        stage('TF-VALIDATE-SHS') {
+            steps {
+                dir ('shs') {
+                    sh 'terraform validate'
+                }
+
+            }
+        }
+
+        stage('TF-FMT-SHS') {
+            steps {
+                dir ('shs') {
+                    sh 'terraform fmt'
+                }
+            }
+        }
+
+        stage('TF-PLAN-SHS') {
+            steps {
+                dir ('shs') {
+                    sh 'terraform plan'
+                    sh 'terraform plan --out tfplan.binary'
+                    sh 'terraform show -json tfplan.binary > tfplan.json'
+                }
+            }
+        }
+
+        stage('TF-APPLY-SHS') {
+            steps {
+                script {
+                    if (env.GIT_BRANCH.split("/")[1] == "main") {
+                        dir('shs') {
+                            sh 'terraform apply -auto-approve'
+                        }
+                    }
+                }
+            }
+        }
+
+// DEV
+
+        stage('TF-INIT-DEV') {
+            steps {
+                dir ('dev') {
+                    sh 'terraform init'
+                }
+
+            }
+        }
+
+        stage('TF-VALIDATE-DEV') {
+            steps {
+                dir ('dev') {
+                    sh 'terraform validate'
+                }
+
+            }
+        }
+
+        stage('TF-FMT-DEV') {
+            steps {
+                dir ('dev') {
+                    sh 'terraform fmt'
+                }
+            }
+        }
+
+        stage('TF-PLAN-DEV') {
+            steps {
+                dir ('dev') {
+                    sh 'terraform plan'
+                    sh 'terraform plan --out tfplan.binary'
+                    sh 'terraform show -json tfplan.binary > tfplan.json'
+                }
+            }
+        }
+
+        stage('TF-APPLY-DEV') {
+            steps {
+                script {
+                    if (env.GIT_BRANCH.split("/")[1] == "main") {
+                        dir('dev') {
+                            sh 'terraform apply -auto-approve'
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    post {
+        always {
+            echo "### CLEARNING WORKSPACE ###"
+            cleanWs()
+
+            echo "### SENDING PIPELINE STATUS TO MS TEAMS ###"
+            office365ConnectorSend webhookUrl: "${MS_Teams_URL}",
+            message: ""
+        }
+    }
+}
