@@ -1,0 +1,35 @@
+---
+metadata:
+  name: "to ensure all resources have required tags"
+  id: "CKV_CUSTOM_3"
+  category: "GENERAL_SECURITY" 
+  severity: "high" 
+scope:
+  provider: "aws" 
+definition: 
+  and:
+    - cond_type: "attribute"
+      resource_types: "all"
+      attribute: "tags.Name"
+      operator: "exists"
+    - cond_type: "attribute"
+      resource_types: "all"
+      attribute: "tags.OwnerID"
+      operator: "exists"
+    - cond_type: "attribute"
+      resource_types: "all"
+      attribute: "tags.OwnerContact"
+      operator: "exists"
+    - cond_type: "attribute"
+      resource_types: "all"
+      attribute: "tags.Project"
+      operator: "exists"
+    - cond_type: "attribute"
+      resource_types: "all"
+      attribute: "tags.Application"
+      operator: "exists"
+    - cond_type: "attribute"
+      resource_types: "all"
+      attribute: "tags.Team"
+      operator: "exists"
+      

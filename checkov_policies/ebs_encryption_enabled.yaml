@@ -1,0 +1,14 @@
+---
+metadata:
+  name: "ebs volumes encryptions enabled"
+  id: "CKV_CUSTOM_5"
+  category: "STORAGE" 
+  severity: "high" 
+scope:
+  provider: "aws" 
+definition: 
+    cond_type: "attribute"
+    resource_types: "aws_ebs_volume"
+    attribute: "encrypted"
+    operator: "equals"
+    value: true

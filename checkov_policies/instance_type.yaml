@@ -1,0 +1,14 @@
+---
+metadata:
+  name: "Ensure ec2 type is t2.micro"
+  id: "CKV_CUSTOM_1"
+  category: "NETWORKING" 
+  severity: "low" 
+scope:
+  provider: "aws" 
+definition: 
+    cond_type: "attribute"
+    resource_types: "aws_instance"
+    attribute: "instance_type"
+    operator: "equals"
+    value: "t2.micro"

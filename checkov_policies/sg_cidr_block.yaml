@@ -1,0 +1,15 @@
+---
+metadata:
+  name: "security groups don't allow 0.0.0.0/0"
+  id: "CKV_CUSTOM_4"
+  category: "NETWORKING" 
+  severity: "high" 
+scope:
+  provider: "aws" 
+definition: 
+    cond_type: "attribute"
+    resource_types: 
+    - "aws_security_group"
+    attribute: "ingress.*.cidr_blocks"
+    operator: "not_equals"
+    value: "0.0.0.0/0"
