@@ -1,0 +1,78 @@
+pipeline {
+    agent any
+    
+    environment {
+        MS_Teams_URL = credentials('')
+    }
+    stages {
+        stage('ECHO') {
+            steps {
+                echo 'Running Pipeline'
+                sh 'pwd'
+            }
+        }
+
+        stage('TF-INIT') {
+            steps {
+                dir ('ec2') {
+                    sh 'terraform init'
+                }
+
+            }
+        }
+
+        stage('TF-VALIDATE') {
+            steps {
+                dir ('ec2') {
+                    sh 'terraform validate'
+                }
+
+            }
+        }
+
+        stage('TF-FMT') {
+            steps {
+                dir ('ec2') {
+                    sh 'terraform fmt'
+                }
+            }
+        }
+
+        stage('TF-PLAN') {
+            steps {
+                dir ('ec2') {
+                    sh 'terraform plan'
+                    sh 'terraform plan --out tfplan.binary'
+                    sh 'terraform show -json tfplan.binary > tfplan.json'
+                }
+            }
+        }
+
+        // stage('CHECKOV') {
+        //     steps { 
+        //         dir ('ec2') {
+        //         sh 'checkov -d . --external-checks-git git@bitbucket.org:akumoproject3/checkov-policies.git -c CKV_CUSTOM_1'
+        //         }
+        //     }
+        // }
+
+        stage('TF-APPLY') {
+            steps {
+                dir ('ec2') {
+                    sh 'terraform apply --auto-approve'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "### CLEARNING WORKSPACE ###"
+            cleanWs()
+
+            echo "### SENDING PIPELINE STATUS TO MS TEAMS ###"
+            office365ConnectorSend webhookUrl: "${MS_Teams_URL}",
+            message: ""
+        }
+    }
+}
