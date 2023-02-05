@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+    parameters {
+        string(name: 'var1', description: 'Testing1 variables', defaultValue: 'test1')
+    }
+    environment {
+        MS_Teams_URL = credentials('')
+    }
+    stages {
+        stage('ECHO') {
+            steps {
+                echo 'Running Pipeline'
+                sh 'pwd'
+            }
+        }
+
+        stage('TF-INIT') {
+            steps {
+                dir ('app') {
+                    sh 'terraform init'
+                }
+
+            }
+        }
+
+        stage('TF-VALIDATE') {
+            steps {
+                dir ('app') {
+                    sh 'terraform validate'
+                }
+
+            }
+        }
+
+        stage('TF-FMT') {
+            steps {
+                dir ('app') {
+                    sh 'terraform fmt'
+                }
+            }
+        }
+
+        stage('TF-PLAN') {
+            steps {
+                dir ('app') {
+                    sh 'terraform plan'
+                    sh 'terraform plan --out tfplan.binary'
+                    sh 'terraform show -json tfplan.binary > tfplan.json'
+                }
+            }
+        }
+
+        stage('CHECKOV') {
+            steps { 
+                dir ('app') {
+                sh 'checkov -d . --external-checks-git git@bitbucket.org:akumoproject3/checkov-policies.git -c CKV_CUSTOM_1'
+                }
+            }
+        }
+
+        stage('TF-APPLY') {
+            steps {
+                script {
+                    if (env.GIT_BRANCH.split("/")[1] == "main") {
+                        dir('app') {
+                            sh 'terraform apply --auto-approve'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "### CLEARNING WORKSPACE ###"
+            cleanWs()
+
+            echo "### SENDING PIPELINE STATUS TO MS TEAMS ###"
+            office365ConnectorSend webhookUrl: "$MS_Teams_URL",
+            message: ""
+        }
+    }
+}
