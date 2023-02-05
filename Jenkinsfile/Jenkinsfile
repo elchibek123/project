@@ -1,0 +1,79 @@
+pipeline {
+    agent any
+    options {
+        ansiColor('xterm')
+    }
+    environment {
+        var1 = 'success'
+        var2 = 'value2'
+        MS_Teams_URL = credentials('ms_teams_url-shs-ue1-sct-001')
+    }
+    stages {
+        stage('TF-INIT') {
+            steps {
+                dir('demo_instance') {
+                    echo "Running Terraform Init"
+                    sh 'terraform init'
+                }
+            }
+        }
+        stage('TF-VALIDATE') {
+            steps {
+                sh 'terraform validate'
+                echo "${var1}"
+            }
+        }
+        stage('TF-FMT') {
+            steps {
+                sh 'terraform fmt'
+                echo "${var1}"
+            }
+        }
+        stage('TF-PLAN') {
+            steps {
+                // sh 'terraform plan'
+                echo "${var1}"
+            }
+        }
+        stage('CHECKOV') {
+            steps {
+                dir('demo_instance') {
+                    echo "Running Checkov"
+                }
+            }
+        }
+        stage("APPROVAL") {
+            steps{
+                timeout(time: 10, unit: 'SECONDS') {
+                    script{
+                        def userInput = input(
+                            id: 'CONFIRM',
+                            message: 'Run Terraform Apply?',
+                            parameters: [
+                                [$class: 'BooleanParameterDefinition',
+                                defaultValue: false,
+                                description: 'Apply Terraform',
+                                name: 'confirm']
+                            ]
+                        )
+                    }
+                }    
+            }
+        }
+        stage('TF-APPLY') {
+            steps {
+                // sh 'terraform apply -auto-approve'
+                echo "${var1}"
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+            office365ConnectorSend webhookUrl: "${MS_Teams_URL}",
+            message: ""
+        }
+    }
+}
