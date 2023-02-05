@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+    environment {
+        MS_Teams_URL = credentials('')
+    }
+    stages {
+        stage('TF-INIT') {
+            steps {
+                sh 'terraform init'
+                sh 'terraform fmt'
+                sh 'terraform apply --auto-approve'
+            }
+        }
+    }
+    post {
+        always {
+            echo "### CLEARNING WORKSPACE ###"
+            cleanWs()
+
+            echo "### SENDING PIPELINE STATUS TO MS TEAMS ###"
+            office365ConnectorSend webhookUrl: "${MS_Teams_URL}",
+            message: ""
+        }
+    }
+}
